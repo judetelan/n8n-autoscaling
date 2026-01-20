@@ -47,6 +47,236 @@ sudo ./install.sh
 
 ---
 
+## DigitalOcean Deployment Guide
+
+Complete step-by-step guide to deploy n8n autoscaling on DigitalOcean.
+
+### Step 1: Create a DigitalOcean Account
+
+1. Go to [digitalocean.com](https://www.digitalocean.com/)
+2. Sign up for an account (new users get $200 free credit for 60 days)
+3. Add a payment method
+
+### Step 2: Add Your SSH Key
+
+This allows secure passwordless access to your server.
+
+**On Windows (PowerShell):**
+```powershell
+# Generate SSH key if you don't have one
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# View your public key
+Get-Content $env:USERPROFILE\.ssh\id_ed25519.pub
+```
+
+**On Mac/Linux:**
+```bash
+# Generate SSH key if you don't have one
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# View your public key
+cat ~/.ssh/id_ed25519.pub
+```
+
+**Add to DigitalOcean:**
+1. Go to [Settings → Security](https://cloud.digitalocean.com/account/security)
+2. Click **Add SSH Key**
+3. Paste your public key
+4. Give it a name (e.g., "My Laptop")
+
+### Step 3: Create a Droplet
+
+1. Go to [Create Droplet](https://cloud.digitalocean.com/droplets/new)
+
+2. **Choose Region:**
+   - Select the datacenter closest to your users
+   - Recommended: NYC, SFO, LON, or SGP
+
+3. **Choose Image:**
+   - Select **Ubuntu 24.04 (LTS) x64**
+
+4. **Choose Size:**
+
+   | Workload | Droplet Type | Specs | Monthly Cost |
+   |----------|--------------|-------|--------------|
+   | Testing | Basic (Regular) | 2 vCPU, 2GB RAM, 50GB SSD | $12/mo |
+   | Light | Basic (Regular) | 2 vCPU, 4GB RAM, 80GB SSD | $24/mo |
+   | Medium | Basic (Regular) | 4 vCPU, 8GB RAM, 160GB SSD | $48/mo |
+   | Production | General Purpose | 4 vCPU, 16GB RAM, 100GB SSD | $84/mo |
+
+   **Recommendation:** Start with the **$24/mo plan** (4GB RAM) for most use cases.
+
+5. **Choose Authentication:**
+   - Select **SSH Key**
+   - Check your SSH key from Step 2
+
+6. **Choose Hostname:**
+   - Enter something memorable like `n8n-server`
+
+7. Click **Create Droplet**
+
+8. **Copy the IP address** once created (e.g., `143.198.123.456`)
+
+### Step 4: Connect to Your Droplet
+
+**On Windows (PowerShell or CMD):**
+```powershell
+ssh root@YOUR_DROPLET_IP
+```
+
+**On Mac/Linux:**
+```bash
+ssh root@YOUR_DROPLET_IP
+```
+
+Type `yes` when asked about the fingerprint.
+
+### Step 5: Run the Installer
+
+Once connected via SSH, run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh -o install.sh
+chmod +x install.sh
+./install.sh
+```
+
+The interactive installer will guide you through:
+
+```
+┌─────────────────────────────────────┐
+│   n8n Autoscaling Installer v1.0   │
+├─────────────────────────────────────┤
+│  1) Fresh Install                   │
+│  2) Update                          │
+│  3) Reconfigure                     │
+│  4) Uninstall                       │
+│  5) Status                          │
+│  q) Quit                            │
+└─────────────────────────────────────┘
+```
+
+Select **1) Fresh Install** and follow the prompts:
+
+1. **Domain Configuration** - Enter your domain or use IP address
+2. **Cloudflare Tunnel** - Optional, for HTTPS (see below)
+3. **Database Configuration** - Set PostgreSQL credentials
+4. **Autoscaling Settings** - Configure worker limits
+5. **Timezone** - Set your timezone
+
+### Step 6: Access n8n
+
+After installation completes:
+
+**Without domain (IP only):**
+```
+http://YOUR_DROPLET_IP:5678
+```
+
+**With Cloudflare Tunnel:**
+```
+https://your-domain.com
+```
+
+### Step 7: Create Your First User
+
+1. Open n8n in your browser
+2. Create your owner account
+3. Start building workflows!
+
+---
+
+## Optional: Set Up Cloudflare Tunnel (HTTPS)
+
+For secure HTTPS access with a custom domain:
+
+### 1. Add Domain to Cloudflare
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Click **Add a Site**
+3. Enter your domain
+4. Select **Free** plan
+5. Update your domain's nameservers to Cloudflare's
+
+### 2. Create a Tunnel
+
+1. Go to [Zero Trust Dashboard](https://one.dash.cloudflare.com/)
+2. Navigate to **Networks → Tunnels**
+3. Click **Create a tunnel**
+4. Name it (e.g., `n8n-tunnel`)
+5. **Copy the tunnel token** (starts with `eyJ...`)
+
+### 3. Configure Public Hostname
+
+1. In the tunnel settings, click **Public Hostname**
+2. Add a hostname:
+   - **Subdomain:** `n8n` (or leave blank for root)
+   - **Domain:** Select your domain
+   - **Service Type:** `HTTP`
+   - **URL:** `n8n:5678`
+
+3. For webhooks, add another hostname:
+   - **Subdomain:** `webhook`
+   - **Domain:** Select your domain
+   - **Service Type:** `HTTP`
+   - **URL:** `n8n-webhook:5678`
+
+### 4. Add Token to n8n
+
+SSH into your server and reconfigure:
+
+```bash
+./install.sh
+# Select 3) Reconfigure
+# Enter your Cloudflare Tunnel token when prompted
+```
+
+Or edit directly:
+```bash
+n8n-ctl config
+# Find CLOUDFLARE_TUNNEL_TOKEN and paste your token
+# Save and exit
+
+n8n-ctl restart
+```
+
+---
+
+## DigitalOcean Tips
+
+### Enable Backups ($4.80/mo extra)
+
+1. Go to your Droplet
+2. Click **Backups**
+3. Enable weekly backups
+
+### Set Up Monitoring (Free)
+
+1. Go to your Droplet
+2. Click **Graphs**
+3. View CPU, memory, disk, and bandwidth usage
+
+### Enable Floating IP (Free)
+
+Keep the same IP even if you recreate the droplet:
+
+1. Go to **Networking → Floating IPs**
+2. Assign to your droplet
+
+### Resize Your Droplet
+
+If you need more resources:
+
+1. Power off the droplet
+2. Click **Resize**
+3. Select new plan
+4. Power on
+
+**Note:** You can only resize UP, not down.
+
+---
+
 ## Management Commands
 
 After installation, use these commands:
