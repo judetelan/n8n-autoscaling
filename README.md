@@ -8,7 +8,62 @@ Tested with hundreds of simultaneous executions running on an 8 core 16gb ram VP
 
 Includes Puppeteer and Playwright with Chromium built-in for pro level scraping from the n8n code node. Stealth plugins included for bot detection evasion.
 
-Simple install, just clone the files + docker compose up
+---
+
+## One-Line Install (Any VPS)
+
+SSH into your VPS and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh | sudo bash
+```
+
+Or for interactive mode:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh -o install.sh
+chmod +x install.sh
+sudo ./install.sh
+```
+
+### Supported Operating Systems
+
+| OS | Versions |
+|----|----------|
+| Ubuntu | 20.04, 22.04, 24.04 |
+| Debian | 11, 12 |
+| CentOS / RHEL | 8, 9 |
+| Fedora | 38+ |
+| Amazon Linux | 2, 2023 |
+| Alpine | 3.18+ |
+
+### Minimum Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 2 cores | 4+ cores |
+| RAM | 2 GB | 4+ GB |
+| Disk | 20 GB | 40+ GB |
+
+---
+
+## Management Commands
+
+After installation, use these commands:
+
+```bash
+n8n-ctl status    # Check service status
+n8n-ctl logs      # View all logs
+n8n-ctl restart   # Restart services
+n8n-ctl update    # Update to latest
+n8n-ctl backup    # Create backup
+n8n-ctl scale 3   # Scale to 3 workers
+n8n-ctl config    # Edit configuration
+```
+
+---
+
+## Manual Installation
 
 ## What's New in n8n 2.0
 
@@ -70,11 +125,13 @@ graph TD
 - If you are a new user, I recommend either Docker Desktop or using the docker convenience script for Ubuntu
 - Set up your Cloudflare domain and subdomains
 
-## Quick Start
+## Quick Start (Manual)
+
+If you prefer manual installation:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/conor-is-my-name/n8n-autoscaling.git
+   git clone https://github.com/judetelan/n8n-autoscaling.git
    cd n8n-autoscaling
    ```
 
