@@ -700,6 +700,390 @@ await browser.close();
 return [{ json: { title } }];
 ```
 
+---
+
+## Built-in Tools Guide
+
+This n8n build includes powerful tools pre-installed. Use them in **Code nodes**.
+
+### Available Tools
+
+| Tool | Purpose | Binary Path |
+|------|---------|-------------|
+| FFmpeg | Video/audio processing | `/usr/bin/ffmpeg` |
+| FFprobe | Media file analysis | `/usr/bin/ffprobe` |
+| GraphicsMagick | Image processing | `/usr/bin/gm` |
+| Puppeteer | Browser automation | Built-in |
+| Playwright | Browser automation | Built-in |
+| Chromium | Headless browser | `/usr/bin/chromium-browser` |
+| Git | Version control | `/usr/bin/git` |
+| cURL | HTTP requests | `/usr/bin/curl` |
+| jq | JSON processing | `/usr/bin/jq` |
+
+---
+
+### FFmpeg Examples
+
+**Convert video format:**
+```javascript
+const { execSync } = require('child_process');
+
+// Get input from previous node (base64 or file path)
+const inputPath = '/tmp/input.mp4';
+const outputPath = '/tmp/output.webm';
+
+// Convert MP4 to WebM
+execSync(`ffmpeg -i ${inputPath} -c:v libvpx -c:a libvorbis ${outputPath} -y`);
+
+return [{ json: { success: true, output: outputPath } }];
+```
+
+**Extract audio from video:**
+```javascript
+const { execSync } = require('child_process');
+
+const inputVideo = '/tmp/video.mp4';
+const outputAudio = '/tmp/audio.mp3';
+
+// Extract audio as MP3
+execSync(`ffmpeg -i ${inputVideo} -vn -acodec libmp3lame -q:a 2 ${outputAudio} -y`);
+
+return [{ json: { success: true, audioFile: outputAudio } }];
+```
+
+**Create video thumbnail:**
+```javascript
+const { execSync } = require('child_process');
+
+const inputVideo = '/tmp/video.mp4';
+const thumbnail = '/tmp/thumbnail.jpg';
+
+// Extract frame at 5 seconds
+execSync(`ffmpeg -i ${inputVideo} -ss 00:00:05 -vframes 1 ${thumbnail} -y`);
+
+return [{ json: { success: true, thumbnail } }];
+```
+
+**Get video metadata with FFprobe:**
+```javascript
+const { execSync } = require('child_process');
+
+const inputVideo = '/tmp/video.mp4';
+
+// Get JSON metadata
+const output = execSync(`ffprobe -v quiet -print_format json -show_format -show_streams ${inputVideo}`);
+const metadata = JSON.parse(output.toString());
+
+return [{ json: metadata }];
+```
+
+**Compress video for web:**
+```javascript
+const { execSync } = require('child_process');
+
+const input = '/tmp/large-video.mp4';
+const output = '/tmp/compressed.mp4';
+
+// Compress with H.264, CRF 28 (lower = better quality, larger file)
+execSync(`ffmpeg -i ${input} -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 128k ${output} -y`);
+
+return [{ json: { success: true, compressed: output } }];
+```
+
+---
+
+### GraphicsMagick Examples
+
+**Resize image:**
+```javascript
+const { execSync } = require('child_process');
+
+const input = '/tmp/image.jpg';
+const output = '/tmp/resized.jpg';
+
+// Resize to 800px width, maintain aspect ratio
+execSync(`gm convert ${input} -resize 800x ${output}`);
+
+return [{ json: { success: true, output } }];
+```
+
+**Create thumbnail:**
+```javascript
+const { execSync } = require('child_process');
+
+const input = '/tmp/image.jpg';
+const output = '/tmp/thumb.jpg';
+
+// Create 150x150 thumbnail (cropped to fit)
+execSync(`gm convert ${input} -resize 150x150^ -gravity center -extent 150x150 ${output}`);
+
+return [{ json: { success: true, thumbnail: output } }];
+```
+
+**Convert image format:**
+```javascript
+const { execSync } = require('child_process');
+
+const input = '/tmp/image.png';
+const output = '/tmp/image.webp';
+
+// Convert PNG to WebP with quality 80
+execSync(`gm convert ${input} -quality 80 ${output}`);
+
+return [{ json: { success: true, output } }];
+```
+
+**Add watermark:**
+```javascript
+const { execSync } = require('child_process');
+
+const input = '/tmp/photo.jpg';
+const watermark = '/tmp/watermark.png';
+const output = '/tmp/watermarked.jpg';
+
+// Composite watermark in bottom-right corner
+execSync(`gm composite -gravity SouthEast -geometry +10+10 ${watermark} ${input} ${output}`);
+
+return [{ json: { success: true, output } }];
+```
+
+---
+
+### Puppeteer Examples
+
+**Take full-page screenshot:**
+```javascript
+const puppeteer = require('puppeteer-core');
+
+const browser = await puppeteer.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const page = await browser.newPage();
+await page.setViewport({ width: 1920, height: 1080 });
+await page.goto('https://example.com', { waitUntil: 'networkidle0' });
+
+const screenshot = await page.screenshot({
+  fullPage: true,
+  encoding: 'base64'
+});
+
+await browser.close();
+
+return [{ json: { screenshot: `data:image/png;base64,${screenshot}` } }];
+```
+
+**Scrape dynamic content:**
+```javascript
+const puppeteer = require('puppeteer-core');
+
+const browser = await puppeteer.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const page = await browser.newPage();
+await page.goto('https://news.ycombinator.com', { waitUntil: 'networkidle0' });
+
+// Scrape headlines
+const headlines = await page.evaluate(() => {
+  return Array.from(document.querySelectorAll('.titleline > a')).map(a => ({
+    title: a.innerText,
+    url: a.href
+  })).slice(0, 10);
+});
+
+await browser.close();
+
+return headlines.map(h => ({ json: h }));
+```
+
+**Generate PDF from webpage:**
+```javascript
+const puppeteer = require('puppeteer-core');
+
+const browser = await puppeteer.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const page = await browser.newPage();
+await page.goto('https://example.com', { waitUntil: 'networkidle0' });
+
+const pdf = await page.pdf({
+  format: 'A4',
+  printBackground: true,
+  margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+});
+
+await browser.close();
+
+return [{
+  json: { filename: 'page.pdf' },
+  binary: { data: pdf.toString('base64'), mimeType: 'application/pdf', fileName: 'page.pdf' }
+}];
+```
+
+**Fill and submit form:**
+```javascript
+const puppeteer = require('puppeteer-core');
+
+const browser = await puppeteer.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const page = await browser.newPage();
+await page.goto('https://example.com/contact', { waitUntil: 'networkidle0' });
+
+// Fill form fields
+await page.type('#name', 'John Doe');
+await page.type('#email', 'john@example.com');
+await page.type('#message', 'Hello from n8n!');
+
+// Submit and wait for navigation
+await Promise.all([
+  page.waitForNavigation(),
+  page.click('#submit-button')
+]);
+
+const success = await page.url();
+await browser.close();
+
+return [{ json: { submitted: true, redirectedTo: success } }];
+```
+
+---
+
+### Playwright Examples (with Stealth)
+
+**Scrape with bot detection evasion:**
+```javascript
+const { chromium } = require('playwright-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+chromium.use(StealthPlugin());
+
+const browser = await chromium.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const context = await browser.newContext({
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+});
+
+const page = await context.newPage();
+await page.goto('https://bot-protected-site.com');
+
+// Your scraping logic here
+const content = await page.content();
+
+await browser.close();
+
+return [{ json: { content } }];
+```
+
+**Handle multiple pages:**
+```javascript
+const { chromium } = require('playwright-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
+chromium.use(StealthPlugin());
+
+const browser = await chromium.launch({
+  executablePath: '/usr/bin/chromium-browser',
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+});
+
+const urls = ['https://example1.com', 'https://example2.com', 'https://example3.com'];
+const results = [];
+
+for (const url of urls) {
+  const page = await browser.newPage();
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  const title = await page.title();
+  results.push({ url, title });
+  await page.close();
+}
+
+await browser.close();
+
+return results.map(r => ({ json: r }));
+```
+
+---
+
+### Working with Binary Data
+
+**Save binary from previous node:**
+```javascript
+const fs = require('fs');
+
+// Get binary data from previous node
+const binaryData = $input.first().binary.data;
+const buffer = Buffer.from(binaryData.data, 'base64');
+
+// Save to temp file
+const tempPath = '/tmp/input-file';
+fs.writeFileSync(tempPath, buffer);
+
+return [{ json: { savedTo: tempPath } }];
+```
+
+**Return binary output:**
+```javascript
+const fs = require('fs');
+
+const filePath = '/tmp/output.mp4';
+const buffer = fs.readFileSync(filePath);
+
+return [{
+  json: { filename: 'output.mp4' },
+  binary: {
+    data: buffer.toString('base64'),
+    mimeType: 'video/mp4',
+    fileName: 'output.mp4'
+  }
+}];
+```
+
+---
+
+### Tips for Code Nodes
+
+1. **Always use `/tmp/`** for temporary files - it's writable
+2. **Clean up temp files** after processing to save disk space
+3. **Use `execSync`** for simple commands, `exec` for async
+4. **Set timeouts** for long-running processes
+5. **Handle errors** with try/catch blocks
+
+```javascript
+const { execSync } = require('child_process');
+const fs = require('fs');
+
+try {
+  // Your processing code
+  execSync('ffmpeg -i input.mp4 output.mp4 -y', { timeout: 60000 });
+
+  // Clean up
+  fs.unlinkSync('/tmp/input.mp4');
+
+  return [{ json: { success: true } }];
+} catch (error) {
+  return [{ json: { success: false, error: error.message } }];
+}
+```
+
+---
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
