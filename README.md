@@ -683,8 +683,22 @@ return [{ json: { title } }];
 
 MIT License - See [LICENSE](LICENSE) for details.
 
-## Credits
+## Credits & Acknowledgments
 
-For step by step instructions follow this guide: https://www.reddit.com/r/n8n/comments/1l9mi6k/major_update_to_n8nautoscaling_build_step_by_step/
+This project is a fork of [conor-is-my-name/n8n-autoscaling](https://github.com/conor-is-my-name/n8n-autoscaling) by **Conor**.
 
-Now includes Cloudflared. Configure on cloudflare.com and paste your token in the .env file.
+**Original n8n Autoscaling System by Conor:**
+- Docker Compose orchestration for n8n 2.0
+- Queue-based autoscaling with Redis monitoring
+- Worker + task runner sidecar architecture
+- Puppeteer/Playwright integration with stealth plugins
+- Cloudflare Tunnel support
+
+For Conor's detailed setup guide, see his Reddit post: [Major Update to n8n-autoscaling Build](https://www.reddit.com/r/n8n/comments/1l9mi6k/major_update_to_n8nautoscaling_build_step_by_step/)
+
+**This Fork Adds:**
+- Production-ready one-command VPS installer
+- Security hardening (SSH, firewall, fail2ban, auto-updates)
+- `n8n-ctl` management CLI
+- Automated backups
+- DigitalOcean deployment guide
