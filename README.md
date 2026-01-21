@@ -1,6 +1,6 @@
-# n8n Autoscaling System (n8n 2.0 Ready)
+# n8n Autoscaling System (Production Ready)
 
-A Docker-based autoscaling solution for n8n workflow automation platform. Dynamically scales worker containers based on Redis queue length. No need to deal with k8s or any other container scaling provider - a simple script runs it all and is easily configurable.
+A **production-grade** Docker-based autoscaling solution for n8n workflow automation platform. Dynamically scales worker containers based on Redis queue length. No need to deal with k8s or any other container scaling provider - a simple script runs it all and is easily configurable.
 
 **Now updated for n8n 2.0** with external task runners support.
 
@@ -10,21 +10,34 @@ Includes Puppeteer and Playwright with Chromium built-in for pro level scraping 
 
 ---
 
-## One-Line Install (Any VPS)
+## Production Security Features
+
+The installer (v2.0.0) includes enterprise-grade security hardening:
+
+| Feature | Description |
+|---------|-------------|
+| **Cloudflare Tunnel** | Required - Zero exposed ports, all traffic via encrypted tunnel |
+| **SSH Hardening** | Password auth disabled, root login restricted to SSH keys only |
+| **Fail2ban** | Aggressive protection - 3 failed attempts = 48-hour ban |
+| **Firewall** | Only SSH (22) open, n8n accessible only via Cloudflare Tunnel |
+| **Auto Updates** | Automatic security patches via unattended-upgrades |
+| **Strong Passwords** | Auto-generated 32-character passwords for all services |
+| **Twice-Daily Backups** | Automated backups at 3 AM and 3 PM |
+| **Secure Cookies** | `N8N_SECURE_COOKIE=true` enforced |
+
+---
+
+## One-Line Install (Production)
 
 SSH into your VPS and run:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh | sudo bash
-```
-
-Or for interactive mode:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh -o install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
+
+> **Note:** One-line piping to bash is disabled for security. Always download and review scripts before running.
 
 ### Supported Operating Systems
 
@@ -37,13 +50,15 @@ sudo ./install.sh
 | Amazon Linux | 2, 2023 |
 | Alpine | 3.18+ |
 
-### Minimum Requirements
+### Production Requirements
 
 | Resource | Minimum | Recommended |
 |----------|---------|-------------|
 | CPU | 2 cores | 4+ cores |
-| RAM | 2 GB | 4+ GB |
-| Disk | 20 GB | 40+ GB |
+| RAM | 4 GB | 8+ GB |
+| Disk | 40 GB | 80+ GB |
+
+> **Note:** RAM is the primary constraint. Each worker + task runner pair uses ~500MB. With default 2-10 scaling, plan for 8GB+ RAM.
 
 ---
 
@@ -100,12 +115,12 @@ cat ~/.ssh/id_ed25519.pub
 
    | Workload | Droplet Type | Specs | Monthly Cost |
    |----------|--------------|-------|--------------|
-   | Testing | Basic (Regular) | 2 vCPU, 2GB RAM, 50GB SSD | $12/mo |
-   | Light | Basic (Regular) | 2 vCPU, 4GB RAM, 80GB SSD | $24/mo |
-   | Medium | Basic (Regular) | 4 vCPU, 8GB RAM, 160GB SSD | $48/mo |
-   | Production | General Purpose | 4 vCPU, 16GB RAM, 100GB SSD | $84/mo |
+   | Development | Basic (Regular) | 2 vCPU, 4GB RAM, 80GB SSD | $24/mo |
+   | **Production (Recommended)** | Basic (Regular) | 4 vCPU, 8GB RAM, 160GB SSD | **$48/mo** |
+   | High Volume | General Purpose | 4 vCPU, 16GB RAM, 100GB SSD | $84/mo |
+   | Enterprise | CPU-Optimized | 8 vCPU, 16GB RAM, 200GB SSD | $168/mo |
 
-   **Recommendation:** Start with the **$24/mo plan** (4GB RAM) for most use cases.
+   **Recommendation:** For production, start with the **$48/mo plan** (8GB RAM) to handle autoscaling workers properly.
 
 5. **Choose Authentication:**
    - Select **SSH Key**
@@ -139,45 +154,50 @@ Once connected via SSH, run:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/judetelan/n8n-autoscaling/main/install.sh -o install.sh
 chmod +x install.sh
-./install.sh
+sudo ./install.sh
 ```
 
 The interactive installer will guide you through:
 
 ```
-┌─────────────────────────────────────┐
-│   n8n Autoscaling Installer v1.0   │
-├─────────────────────────────────────┤
-│  1) Fresh Install                   │
-│  2) Update                          │
-│  3) Reconfigure                     │
-│  4) Uninstall                       │
-│  5) Status                          │
-│  q) Quit                            │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│   n8n Autoscaling Installer v2.0.0          │
+│   PRODUCTION MODE                           │
+├─────────────────────────────────────────────┤
+│  1) Fresh Install                           │
+│  2) Update                                  │
+│  3) Reconfigure                             │
+│  4) Uninstall                               │
+│  5) Status                                  │
+│  q) Quit                                    │
+└─────────────────────────────────────────────┘
 ```
 
 Select **1) Fresh Install** and follow the prompts:
 
-1. **Domain Configuration** - Enter your domain or use IP address
-2. **Cloudflare Tunnel** - Optional, for HTTPS (see below)
-3. **Database Configuration** - Set PostgreSQL credentials
-4. **Autoscaling Settings** - Configure worker limits
+1. **Cloudflare Tunnel Token** - **Required** for production (see below)
+2. **Domain Configuration** - Your domain for n8n (e.g., `n8n.yourdomain.com`)
+3. **Webhook Domain** - Your webhook subdomain (e.g., `webhook.yourdomain.com`)
+4. **Autoscaling Settings** - Configure worker limits (default: 2-10 workers)
 5. **Timezone** - Set your timezone
+
+The installer will automatically:
+- Generate strong 32-character passwords for all services
+- Harden SSH (disable password auth)
+- Configure fail2ban with aggressive rules
+- Set up automatic security updates
+- Configure twice-daily backups
+- Lock down firewall (only SSH open)
 
 ### Step 6: Access n8n
 
 After installation completes:
 
-**Without domain (IP only):**
 ```
-http://YOUR_DROPLET_IP:5678
+https://n8n.yourdomain.com
 ```
 
-**With Cloudflare Tunnel:**
-```
-https://your-domain.com
-```
+> **Important:** n8n is ONLY accessible via Cloudflare Tunnel. Port 5678 is not exposed to the internet.
 
 ### Step 7: Create Your First User
 
@@ -187,9 +207,13 @@ https://your-domain.com
 
 ---
 
-## Optional: Set Up Cloudflare Tunnel (HTTPS)
+## Required: Set Up Cloudflare Tunnel
 
-For secure HTTPS access with a custom domain:
+Cloudflare Tunnel is **required** for production deployment. This ensures:
+- Zero exposed ports (n8n not accessible via IP:port)
+- All traffic encrypted through Cloudflare's network
+- DDoS protection included
+- No need to manage SSL certificates
 
 ### 1. Add Domain to Cloudflare
 
@@ -279,17 +303,39 @@ If you need more resources:
 
 ## Management Commands
 
-After installation, use these commands:
+After installation, use the `n8n-ctl` command:
 
 ```bash
-n8n-ctl status    # Check service status
-n8n-ctl logs      # View all logs
-n8n-ctl restart   # Restart services
-n8n-ctl update    # Update to latest
-n8n-ctl backup    # Create backup
-n8n-ctl scale 3   # Scale to 3 workers
-n8n-ctl config    # Edit configuration
+# Service Management
+n8n-ctl status              # Check all service status
+n8n-ctl logs                # View all logs (follow mode)
+n8n-ctl logs n8n            # View specific service logs
+n8n-ctl restart             # Restart all services
+n8n-ctl stop                # Stop all services
+n8n-ctl start               # Start all services
+
+# Scaling
+n8n-ctl scale 5             # Scale to 5 workers (and 5 task runners)
+
+# Backups (also run automatically at 3 AM and 3 PM)
+n8n-ctl backup              # Create manual backup
+n8n-ctl restore             # Restore from backup
+
+# Configuration
+n8n-ctl config              # Edit .env configuration
+n8n-ctl reconfigure         # Run configuration wizard
+
+# Health & Updates
+n8n-ctl health              # Check service health
+n8n-ctl update              # Update to latest version
 ```
+
+### Backup Location
+
+Backups are stored in `/opt/n8n-autoscaling/backups/` and include:
+- PostgreSQL database dump
+- Environment configuration
+- Docker volumes
 
 ---
 
@@ -388,16 +434,24 @@ If you prefer manual installation:
 
 ## Configuration
 
-### Key Environment Variables
+### Key Environment Variables (Production Defaults)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MIN_REPLICAS` | Minimum number of worker containers | 1 |
-| `MAX_REPLICAS` | Maximum number of worker containers | 5 |
+| `MIN_REPLICAS` | Minimum number of worker containers | **2** |
+| `MAX_REPLICAS` | Maximum number of worker containers | **10** |
 | `SCALE_UP_QUEUE_THRESHOLD` | Queue length to trigger scale up | 5 |
-| `SCALE_DOWN_QUEUE_THRESHOLD` | Queue length to trigger scale down | 1 |
-| `POLLING_INTERVAL_SECONDS` | How often to check queue length | 10 |
-| `COOLDOWN_PERIOD_SECONDS` | Time between scaling actions | 10 |
+| `SCALE_DOWN_QUEUE_THRESHOLD` | Queue length to trigger scale down | 2 |
+| `POLLING_INTERVAL_SECONDS` | How often to check queue length | 15 |
+| `COOLDOWN_PERIOD_SECONDS` | Time between scaling actions | 60 |
+
+### Security Environment Variables (Auto-configured)
+
+| Variable | Production Value | Description |
+|----------|-----------------|-------------|
+| `N8N_SECURE_COOKIE` | `true` | Secure cookie flag enforced |
+| `N8N_BLOCK_ENV_ACCESS_IN_NODE` | `true` | Blocks env access in Code nodes |
+| `N8N_DIAGNOSTICS_ENABLED` | `false` | Telemetry disabled |
 
 ### Task Runner Configuration (n8n 2.0)
 
