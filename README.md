@@ -199,9 +199,29 @@ https://n8n.yourdomain.com
 
 > **Important:** n8n is ONLY accessible via Cloudflare Tunnel. Port 5678 is not exposed to the internet.
 
-### Step 7: Create Your First User
+### Step 7: View Your Credentials
 
-1. Open n8n in your browser
+The installer saves all generated credentials to a file:
+
+```bash
+cat /opt/n8n-autoscaling/CREDENTIALS.txt
+```
+
+This file contains:
+- n8n access URL
+- PostgreSQL credentials
+- Encryption keys
+- Backup information
+
+**Important:** Save these credentials securely, then delete the file:
+
+```bash
+rm /opt/n8n-autoscaling/CREDENTIALS.txt
+```
+
+### Step 8: Create Your First User
+
+1. Open n8n in your browser (`https://n8n.yourdomain.com`)
 2. Create your owner account
 3. Start building workflows!
 
@@ -223,13 +243,14 @@ Cloudflare Tunnel is **required** for production deployment. This ensures:
 4. Select **Free** plan
 5. Update your domain's nameservers to Cloudflare's
 
-### 2. Create a Tunnel
+### 2. Create a Tunnel (Connector)
 
 1. Go to [Zero Trust Dashboard](https://one.dash.cloudflare.com/)
-2. Navigate to **Networks → Tunnels**
-3. Click **Create a tunnel**
-4. Name it (e.g., `n8n-tunnel`)
-5. **Copy the tunnel token** (starts with `eyJ...`)
+2. Navigate to **Networks → Connectors** (previously called "Tunnels")
+3. Click **Create a connector**
+4. Select **Cloudflared**
+5. Name it (e.g., `n8n-production`)
+6. **Copy the tunnel token** (starts with `eyJ...`, ~200+ characters)
 
 ### 3. Configure Public Hostname
 
