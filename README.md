@@ -68,8 +68,8 @@ Complete step-by-step guide to deploy n8n autoscaling on DigitalOcean.
 
 ### Step 1: Create a DigitalOcean Account
 
-1. Go to [digitalocean.com](https://www.digitalocean.com/)
-2. Sign up for an account (new users get $200 free credit for 60 days)
+1. Go to [digitalocean.com](https://m.do.co/c/952da1dae5ec) (referral link - get $200 free credit)
+2. Sign up for an account
 3. Add a payment method
 
 ### Step 2: Add Your SSH Key
